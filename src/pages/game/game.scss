@@ -136,7 +136,7 @@
 				position: relative;
 
 				> img {
-					width: 70.71%; // cos 45°
+					width: calc(70.71% * 0.75); // 75% of cos 45°
 					position: absolute;
 					top: 50%;
 					left: 50%;
