@@ -3,6 +3,7 @@ import World from '../../../json/world.mjs';
 import * as Hex from './Hex.mjs';
 import Faction from './Faction.mjs';
 import Movable from './Movable.mjs';
+import { ActionHandler } from './Actions.mjs';
 import { currentGame } from './Game.mjs';
 
 export function actionTileCoordinates(action, row, col) {
@@ -40,6 +41,7 @@ function throwTypeError(message) {
 }
 
 export default class Unit extends Movable {
+	#savedAction
 	#sightDistance
 	#unitType
 
@@ -79,8 +81,14 @@ export default class Unit extends Movable {
 		// TODO: Add setting to skip view/center/wait if not human player's unit
 
 		super.activate(continueOnPath);
-
 		currentGame.activeUnit = this;
+
+		if (typeof (this.#savedAction ?? false) === 'object') {
+			if (this.#savedAction.params.hex === this.hex) {
+				ActionHandler.handle(this.#savedAction.action, { unit: this, ...this.#savedAction.params });
+				this.#savedAction = null;
+			}
+		}
 
 		// Not the human player's unit, do nothing (for now)
 		if (this.faction.index !== 0) {
@@ -105,6 +113,23 @@ export default class Unit extends Movable {
 			super.moveOneStep();
 		} catch (e) {
 			// I don't think we care about the error here
+		}
+	}
+
+	setAction(action, params = {}) {
+		if (typeof action !== 'string') {
+			throw new TypeError('Unit.setAction expects action to be a string!');
+		}
+		if (Hex.isHex(params.hex) && params.hex === this.hex) {
+			ActionHandler.handle(action, { unit: this, ...params });
+		}
+		if (Hex.isHex(params.hex) && params.hex !== this.hex) {
+			this.#savedAction = {
+				action,
+				params,
+			},
+			this.setPathAndMove(params.hex);
+			return;
 		}
 	}
 

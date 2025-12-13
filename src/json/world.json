@@ -50,7 +50,7 @@
 			"unitTypes": [
 				"farmer"
 			],
-			"showIn": ["unit-actions-menu"],
+			"showIn": ["tile-menu"],
 			"isValid": "isFarmBuildable",
 			"execute": "buildFarm"
 		},

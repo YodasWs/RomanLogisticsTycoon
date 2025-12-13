@@ -50,6 +50,7 @@ class GameAction {
 		if (!this.isValid(context)) {
 			return false;
 		}
+		// Execute emits 'doing-action' event before running
 		const fnExecute = ActionExecutors[this['#execute']];
 		if (typeof fnExecute === 'function') {
 			return Promise.try(() => {
@@ -58,6 +59,7 @@ class GameAction {
 				fnExecute(context);
 			});
 		}
+		// Command does not emit 'doing-action' event!
 		const fnCommand = ActionExecutors[this['#command']];
 		if (typeof fnCommand === 'function') {
 			return Promise.try(() => {
@@ -95,7 +97,6 @@ const ActionValidators = {
 		return City.isCity(hex.city);
 	},
 	isFarmBuildable({ hex, unit }) {
-		if (hex !== unit.hex) return false;
 		if (!ActionValidators.hexTileValid({ hex })) return false;
 		return unit.unitType === 'farmer' && hex.tile.isValidImprovement('farm');
 	},
@@ -109,6 +110,10 @@ const ActionValidators = {
 
 const ActionExecutors = {
 	buildFarm({ unit, hex }) {
+		if (hex !== unit.hex) {
+			unit.setAction('build-farm', { hex });
+			return;
+		}
 		hex.tile.setImprovement('farm', unit.faction);
 		hex.tile.laborers = new Laborer({
 			hex,

@@ -209,6 +209,13 @@ export default class Movable {
 		return this.#moveIterator = this.#FollowPathGenerator();
 	}
 
+	setPathAndMove(targetHex, Grid = Hex.Grid) {
+		this.setPath(targetHex, Grid);
+		if (this.#moveIterator !== null) {
+			this.moveOneTurn();
+		}
+	}
+
 	moveOneStep() {
 		if (this.#moveIterator !== null) {
 			const result = this.#moveIterator.next();
