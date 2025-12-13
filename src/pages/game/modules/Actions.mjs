@@ -135,6 +135,8 @@ const ActionExecutors = {
 		currentGame.scenes.start('city-view', { hex });
 	},
 	startMoveTo({ unit, hex }) {
+		unit ??= currentGame.activeUnit;
+		hex ??= currentGame.activeTile ?? unit.hex;
 		if (unit.setPath(hex)) {
 			unit.moveOneTurn();
 		}

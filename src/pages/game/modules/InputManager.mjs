@@ -227,6 +227,7 @@ export default class InputManager {
 				case 'n':
 					break;
 				case 'm':
+					currentGame.events.emit('key-pressed', 'move');
 					break;
 				case 'Escape':
 					currentGame.events.emit('esc-pressed');
