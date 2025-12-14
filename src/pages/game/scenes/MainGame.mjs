@@ -336,11 +336,12 @@ export default {
 
 		this.events.on('pause', () => {
 			currentGame.scenes.pause('mainControls');
-			hideActionSprites();
+			hideAllActionSprites();
 			currentGame.domContainer.style.zIndex = 0;
 			this.inputManager.disableKeyboardInput();
 		}).on('sleep', () => {
 			currentGame.scenes.sleep('mainControls');
+			hideAllActionSprites();
 			currentGame.domContainer.style.zIndex = 0;
 			this.inputManager.disableKeyboardInput();
 		});
@@ -350,12 +351,18 @@ export default {
 				unit: currentGame.activeUnit,
 				skipCentering: true,
 			});
+			currentGame.events.emit('hex-clicked', {
+				hex: currentGame.activeTile,
+			});
 			this.inputManager.enableKeyboardInput();
 		}).on('wake', () => {
 			currentGame.scenes.wake('mainControls');
 			currentGame.events.emit('unit-activated', {
 				unit: currentGame.activeUnit,
 				skipCentering: true,
+			});
+			currentGame.events.emit('hex-clicked', {
+				hex: currentGame.activeTile,
 			});
 			this.inputManager.enableKeyboardInput();
 		});
