@@ -224,6 +224,7 @@ export default {
 		// Load images for player's actions
 		this.load.image('activeTile', 'img/activeTile.png');
 		this.load.image('activeUnit', 'img/activeUnit.png');
+		this.load.image('actions.cancel', 'img/actions/cancel.png');
 		World.actions.forEach((action) => {
 			if (action.icon) this.load.image(`actions.${action.key}`, `img/actions/${action.icon}`);
 		});

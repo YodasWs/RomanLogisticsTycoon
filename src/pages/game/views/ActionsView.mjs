@@ -145,7 +145,11 @@ function OpenTileMenu(evt) {
 
 	// Add cancel button
 	const cancel = document.createElement('button');
-	cancel.innerHTML = 'Cancel';
+	if (currentGame.scenes.mainGame.textures.exists('actions.cancel')) {
+		cancel.append(currentGame.scenes.mainGame.textures.get('actions.cancel').getSourceImage());
+	} else {
+		cancel.innerHTML = 'Cancel';
+	}
 	cancel.addEventListener('click', () => {
 		currentGame.events.emit('esc-pressed');
 	});
