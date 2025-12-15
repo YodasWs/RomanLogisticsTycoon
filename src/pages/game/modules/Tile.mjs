@@ -13,7 +13,7 @@ function isValidImprovement(hex, improvement, builtImprovement) {
 	// Improvement must exist
 	if (!(improvement in World.improvements)) return false;
 	// Improvement must be same as current, or new
-	if (builtImprovement.key !== '' && builtImprovement.key !== improvement) return false;
+	if (builtImprovement.key !== '') return false;
 	// Improvement must be valid for terrain
 	if (!(hex.terrain.terrain in World.improvements[improvement]?.terrains)) return false;
 	// Cannot build improvement in city
