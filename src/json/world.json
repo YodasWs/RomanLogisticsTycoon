@@ -28,15 +28,6 @@
 			"execute": "skip"
 		},
 		{
-			"key": "tile",
-			"label": "Information on space",
-			"description": "View information about this tile",
-			"icon": "search.png",
-			"showIn": ["tile-menu"],
-			"isValid": "hexTileValid",
-			"command": "startTileView"
-		},
-		{
 			"key": "city-view",
 			"label": "View City",
 			"description": "View information about this city",
@@ -45,18 +36,37 @@
 			"execute": "startCityView"
 		},
 		{
-			"key": "build-farm",
+			"key": "build-farm-here",
 			"label": "Build Farm",
 			"description": "Construct a farm on this tile. The farmer unit will be consumed and become a laborer to work the farm.",
+			"icon": "farmer-hoeing.png",
 			"unitTypes": [
 				"farmer"
 			],
-			"showIn": [
-				"tile-menu",
-				"unit-actions-menu"
-			],
+			"showIn": ["unit-actions-menu"],
 			"isValid": "isFarmBuildable",
 			"execute": "buildFarm"
+		},
+		{
+			"key": "build-farm",
+			"label": "Build Farm",
+			"description": "Construct a farm on this tile. The farmer unit will be consumed and become a laborer to work the farm.",
+			"icon": "farm-pin.png",
+			"unitTypes": [
+				"farmer"
+			],
+			"showIn": ["tile-menu"],
+			"isValid": "isFarmBuildable",
+			"execute": "buildFarm"
+		},
+		{
+			"key": "tile",
+			"label": "Information on space",
+			"description": "View information about this tile",
+			"icon": "search.png",
+			"showIn": ["tile-menu"],
+			"isValid": "hexTileValid",
+			"command": "startTileView"
 		},
 		{
 			"key": "end-turn",
