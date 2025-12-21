@@ -12,6 +12,7 @@ const fogOfWarTints = {
 const fogOfWarMaps = new Map(); // key: Faction instance, value: Map of Hex instance → fog state
 export class FogOfWar {
 	static startTileFogState(faction, hex) {
+		if (!GameConfig.World.fogOfWar) return;
 		if (!Faction.isFaction(faction)) {
 			throw new TypeError('FogOfWar.startTileFogState expects to be assigned object instance of Faction!');
 		}
@@ -30,6 +31,7 @@ export class FogOfWar {
 	}
 
 	static exploreTileForFaction(faction, hex) {
+		if (!GameConfig.World.fogOfWar) return;
 		if (!Faction.isFaction(faction)) {
 			throw new TypeError('FogOfWar.exploreTileForFaction expects to be assigned object instance of Faction!');
 		}
@@ -53,6 +55,7 @@ export class FogOfWar {
 	}
 
 	static viewTileForFaction(faction, hex) {
+		if (!GameConfig.World.fogOfWar) return;
 		if (!Faction.isFaction(faction)) {
 			throw new TypeError('FogOfWar expects to be assigned object instance of Faction!');
 		}
@@ -76,6 +79,7 @@ export class FogOfWar {
 	}
 
 	static isHexVisible(faction, hex) {
+		if (!GameConfig.World.fogOfWar) return true;
 		if (!Faction.isFaction(faction)) {
 			throw new TypeError('FogOfWar.isHexVisible expects to be assigned object instance of Faction!');
 		}
@@ -92,6 +96,7 @@ export class FogOfWar {
 	}
 
 	static isHexExplored(faction, hex) {
+		if (!GameConfig.World.fogOfWar) return true;
 		if (!Faction.isFaction(faction)) {
 			throw new TypeError('FogOfWar.isHexExplored expects to be assigned object instance of Faction!');
 		}

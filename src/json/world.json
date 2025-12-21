@@ -1,4 +1,5 @@
 {
+	"fogOfWar": true,
 	"actions": [
 		{
 			"key": "move",
@@ -293,7 +294,7 @@
 				"terrain": "marsh"
 			},
 			{
-				"terrain": "lake"
+				"terrain": "marsh"
 			},
 			{
 				"terrain": "grass"
@@ -302,13 +303,13 @@
 				"terrain": "grass"
 			},
 			{
-				"terrain": "grass"
+				"terrain": "mountain"
 			},
 			{
-				"terrain": "lake"
+				"terrain": "forest"
 			},
 			{
-				"terrain": "grass"
+				"terrain": "forest"
 			},
 			{
 				"terrain": "grass"
@@ -340,7 +341,7 @@
 				"terrain": "grass"
 			},
 			{
-				"terrain": "grass"
+				"terrain": "marsh"
 			},
 			{
 				"terrain": "grass",
