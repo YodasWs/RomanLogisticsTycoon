@@ -42,6 +42,9 @@ export function IsLegalMove(targetHex, movable) {
 	if (!Movable.isInstanceofMovable(movable)) return false;
 	if (!FogOfWar.isHexExplored(movable.faction, targetHex)) return false;
 
+	// If water and cannot normally move on water, is there a unit override for this terrain movement?
+	if (targetHex.terrain.isWater && !movable.moveOnWater) return Number.isInteger(movable.movementCosts[targetHex.terrain.terrain]);
+
 	if (Unit.isUnit(movable)) {
 		// TODO: Check move into City
 		if (City.isCity(targetHex.city) && targetHex.city.nation !== movable.faction.nation) {
