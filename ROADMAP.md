@@ -12,8 +12,6 @@ This milestone is focused on building the absolute minimum viable product (MVP) 
     [Issue #4](https://github.com/YodasWs/Samnite-Supply-Lines/issues/4)
   - [x] Food has to move to the City to give the Player money.
     [Issue #11](https://github.com/YodasWs/Samnite-Supply-Lines/issues/11)
-  - [ ] Let the Player change Laborer assignments.
-    [Issue #19](https://github.com/YodasWs/Samnite-Supply-Lines/issues/19)
   - [ ] Let the Player hire more Workers and Laborers.
     [Issue #18](https://github.com/YodasWs/Samnite-Supply-Lines/issues/18)
 - **UI Elements**: Add the most essential user interface elements, like letting the Player move the Units and perform actions and see territory claims on each Tile.
@@ -36,7 +34,6 @@ After the core loop is solid, we can add other UI/UX elements necessary for a Mi
 - [ ] [Title Screen](https://github.com/YodasWs/Samnite-Supply-Lines/issues/3)
 - [ ] [Main Menu](https://github.com/YodasWs/Samnite-Supply-Lines/issues/2)
 - [ ] [Settings Screen](https://github.com/YodasWs/Samnite-Supply-Lines/issues/43)
-- [ ] [Map Overlays](https://github.com/YodasWs/Samnite-Supply-Lines/issues/39)
 
 ## 🆕 Then: Expanding the World (v0.4)
 Once we have the main core down and the basics of a great, useful UI, we can start adding more content and expanding the game world!
