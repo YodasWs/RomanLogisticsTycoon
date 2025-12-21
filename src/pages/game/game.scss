@@ -89,6 +89,7 @@
 		position: fixed;
 		z-index: 1;
 		bottom: 0;
+		right: auto;
 		top: 50px;
 		left: 0;
 		flex-flow: column nowrap;
@@ -99,35 +100,53 @@
 			display: flex;
 			flex-flow: column wrap;
 			justify-content: space-evenly;
+			background: green;
+
+			+ :where(div:not([hidden]), div:not(:empty)),
+			&:has(+ :where(div:not([hidden]), div:not(:empty))) {
+				justify-content: space-around;
+			}
+
+			&:empty,
+			&[hidden] {
+				display: none;
+			}
 		}
 
 		@media (orientation: portrait) {
 			bottom: 0;
 			right: 0;
 			left: 0;
+			top: auto;
+			flex-flow: row wrap;
 
 			> div {
 				margin-top: -1px;
 				flex-flow: row wrap;
 				padding: 15px 5px;
 				justify-content: space-evenly;
+				flex-basis: 100vw;
 
 				&:empty {
 					display: none;
 				}
 			}
 
-			@media (min-width: 600px) {
+			@media (min-width: 450px) {
 				flex-flow: row nowrap;
 
 				> div {
-					flex-basis: 50vw;
+					justify-content: space-around;
+				}
+
+				> div:has(+ :where(div:not([hidden]), div:not(:empty))) {
+					padding-right: 0;
+				}
+
+				> div + :where(div:not([hidden]), div:not(:empty)) {
+					padding-left: 0;
 				}
 			}
-		}
-
-		> div {
-			background: green;
 		}
 
 		button {
