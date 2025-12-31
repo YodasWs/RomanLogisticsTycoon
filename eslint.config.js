@@ -21,6 +21,13 @@ module.exports = defineConfig([
 		'SwitchCase': 1,
 	},
 ],
+'quotes': [
+	2,
+	'single',
+	{
+		'avoidEscape': true,
+	},
+],
 'space-before-function-paren': 0,
 'comma-dangle': 0,
 'no-console': 0,
