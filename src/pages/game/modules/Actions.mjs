@@ -120,6 +120,8 @@ const ActionExecutors = {
 			faction: unit.faction,
 			type: 'farmer',
 		});
+		// Emit farm-built event for UI/notifications
+		currentGame.events.emit('farm-built', { hex, faction: unit.faction });
 		unit.destroy();
 	},
 	centerMap() {
