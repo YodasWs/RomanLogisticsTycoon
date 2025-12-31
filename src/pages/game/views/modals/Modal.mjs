@@ -1,3 +1,173 @@
+import * as Hex from '../../modules/Hex.mjs';
+import { currentGame } from '../../modules/Game.mjs';
+
+// Modal event listeners for game notifications and tutorial popups
+// These were moved from MainGame.mjs for separation of concerns
+const SPOIL_AGGREGATION_MS = 2500; // window to aggregate multiple spoil events
+const SPOIL_COOLDOWN_MS = 30 * 1000; // minimum time between spoil notifications
+
+// Farm built event
+currentGame.events.on('farm-built', (evt) => {
+  const { hex } = evt.detail || {};
+  const now = Date.now();
+  if (now - modalState.lastFarmWarningTs < 30 * 1000) return; // 30s cooldown
+  modalState.lastFarmWarningTs = now;
+  if (!modalState.romeFound) {
+    Modal.open({ type: 'farm_before_rome_warning', once: false, priority: 5 });
+    return;
+  }
+  // If Rome already found, check distance and warn if >5
+  const romeHex = Hex.Grid.getHex({ row: evt.detail?.romeRow ?? null, col: evt.detail?.romeCol ?? null }) || null;
+  // Fallback: find Rome city hex (first nation city)
+  let foundRome = null;
+  Hex.Grid.forEach((h) => {
+    if (h.city && h.city.nation === currentGame.nations?.[0]) foundRome = foundRome || h;
+  });
+  const rome = romeHex || foundRome;
+  if (!rome || !hex) return;
+  const d = Hex.Grid.distance(hex, rome);
+  if (d > 5) {
+    Modal.open({ type: 'distance_spoil_warning', once: false, priority: 7, payload: { distance: d, romeTileId: { row: rome.row, col: rome.col } } });
+  }
+});
+
+// When fog reveals a hex with a city belonging to Rome, mark Rome found
+currentGame.events.on('hex-visible', (evt) => {
+  const hex = evt.detail?.hex;
+  if (!hex) return;
+  if (!hex.city) return;
+  // Consider Rome to be the first city of Nation index 0
+  const romeNation = currentGame.nations?.[0];
+  if (!romeNation) return;
+  if (hex.city.nation !== romeNation) return;
+  if (modalState.romeFound) return;
+  modalState.romeFound = true;
+  currentGame.events.emit('rome-found', { hex });
+  Modal.open({ type: 'post_rome_build_guidance', once: true, priority: 5 });
+
+  // Check for any existing farms farther than 5 tiles from Rome
+  const farFarms = [];
+  Hex.Grid.forEach((h) => {
+    if (h.tile.improvement?.key === 'farm') {
+      const d = Hex.Grid.distance(h, hex);
+      if (d > 5) farFarms.push({ hex: h, distance: d });
+    }
+  });
+  if (farFarms.length > 0) {
+    Modal.open({ type: 'distance_spoil_warning', once: true, priority: 7, payload: { count: farFarms.length, example: farFarms[0] } });
+  }
+  // Also check for enemy units on this hex (first encounter)
+  if (!modalState.seenEnemy) {
+    // scan all factions' units for units on this hex that are not player's
+    let enemyFound = false;
+    currentGame.players.forEach((p) => {
+      if (p.index === 0) return;
+      p.units.forEach((u) => {
+        if (u.deleted) return;
+        if (u.hex === hex) enemyFound = true;
+      });
+    });
+    if (enemyFound) {
+      modalState.seenEnemy = true;
+      Modal.open({ type: 'first_enemy_army', once: true, priority: 9 });
+    }
+  }
+});
+
+// Detect first Food arrival to Rome
+currentGame.events.on('goods-moved', (evt) => {
+  const { goods, promise } = evt.detail || {};
+  if (!goods || typeof goods.goodsType === 'undefined') return;
+  if (goods.goodsType !== 'food') return;
+  if (!promise || typeof promise.then !== 'function') return;
+  promise.then(() => {
+    // If delivered to a City belonging to Rome
+    if (goods.hex?.city && goods.hex.city.nation === currentGame.nations?.[0]) {
+      if (!modalState.firstFoodArrived) {
+        modalState.firstFoodArrived = true;
+        Modal.open({ type: 'first_food_arrival', once: true, priority: 8 });
+      }
+    }
+  }).catch(() => {});
+});
+
+// Rome demand increase -> show modal once
+currentGame.events.on('rome-demand-increase', (evt) => {
+  if (modalState.romeDemandNotified) return;
+  modalState.romeDemandNotified = true;
+  Modal.open({ type: 'rome_demand_increase', once: true, priority: 7, payload: { city: evt.detail?.city } });
+});
+
+// Food spoil events -> aggregate and alert player with cooldown
+currentGame.events.on('food-spoiled', (evt) => {
+  // Push event into buffer
+  const detail = evt?.detail || {};
+  const goods = detail.goods || null;
+  modalState._spoilBuffer.push({ goods, rounds: detail.rounds || goods?.rounds || 0 });
+
+  // If a timer is already set, leave it to drain later
+  if (modalState._spoilTimer !== null) return;
+
+  // Set timer to aggregate events then notify once
+  modalState._spoilTimer = setTimeout(() => {
+    try {
+      const now = Date.now();
+      // enforce cooldown
+      if (now - modalState._lastSpoilNotifyTs < SPOIL_COOLDOWN_MS) {
+        // clear buffer and reset timer without notifying
+        modalState._spoilBuffer = [];
+        modalState._spoilTimer = null;
+        return;
+      }
+
+      const buffer = modalState._spoilBuffer.slice();
+      const count = buffer.length;
+      const totalRounds = buffer.reduce((s, b) => s + (b.rounds || 0), 0);
+      const example = buffer.find(b => b.goods && b.goods.start) || buffer[0] || {};
+
+      Modal.open({
+        type: 'food_spoiled',
+        once: false,
+        priority: 9,
+        payload: {
+          count,
+          totalRounds,
+          exampleStart: example.goods?.start ?? null,
+          goodsExample: example.goods ?? null,
+        },
+      });
+
+      modalState._lastSpoilNotifyTs = now;
+    } finally {
+      modalState._spoilBuffer = [];
+      clearTimeout(modalState._spoilTimer);
+      modalState._spoilTimer = null;
+    }
+  }, SPOIL_AGGREGATION_MS);
+});
+
+// Warn when the player's war units (legions) are created that they need tribute/supplies
+currentGame.events.on('unit-created', (evt) => {
+  const unit = evt.detail?.unit;
+  if (!unit) return;
+  if (unit.faction !== currentGame.players[0]) return;
+  if (unit.unitType === 'warrior' && !modalState.legionWarnShown) {
+    modalState.legionWarnShown = true;
+    Modal.open({ type: 'legion_tribute_warning', once: true, priority: 9 });
+  }
+});
+// Modal state tracking for first-time notifications and spoilage
+export const modalState = {
+  romeFound: false,
+  firstFoodArrived: false,
+  lastFarmWarningTs: 0,
+  // Spoilage aggregation state
+  _spoilBuffer: [],
+  _spoilTimer: null,
+  _lastSpoilNotifyTs: 0,
+  seenEnemy: false,
+  romeDemandNotified: false,
+};
 // Lightweight Modal manager for the game UI
 // API: Modal.open({type, title, body, payload, once=true, priority=0}) => Promise(resolved on close)
 //       Modal.close()
@@ -9,11 +179,11 @@ export default class ModalManager {
   constructor() {
     this.queue = [];
     this.isShowing = false;
-    this._seen = new Set();
-    this._createRoot();
+    this.#seen = new Set();
+    this.#createRoot();
   }
 
-  _createRoot() {
+  #createRoot() {
     if (typeof document === 'undefined') return;
     this.root = document.getElementById('game-modal-root') || document.createElement('div');
     this.root.id = 'game-modal-root';
@@ -22,7 +192,7 @@ export default class ModalManager {
 
   open({ type, title, body, payload = {}, once = true, priority = 0 } = {}) {
     return new Promise((resolve) => {
-      if (once && type && this._seen.has(type)) {
+      if (once && type && this.#seen.has(type)) {
         resolve({ skipped: true });
         return;
       }
@@ -31,34 +201,34 @@ export default class ModalManager {
       // insert by priority (higher first)
       const i = this.queue.findIndex(q => q.priority < priority);
       if (i === -1) this.queue.push(item); else this.queue.splice(i, 0, item);
-      this._processQueue();
+      this.#processQueue();
     });
   }
 
   close(result = {}) {
     if (!this.current) return;
     const cur = this.current;
-    this._destroyCurrent();
-    if (cur.once && cur.type) this._seen.add(cur.type);
+    this.#destroyCurrent();
+    if (cur.once && cur.type) this.#seen.add(cur.type);
     cur.resolve(result);
     this.current = null;
     this.isShowing = false;
     // small async gap to avoid immediate re-entry
-    setTimeout(() => this._processQueue(), 50);
+    setTimeout(() => this.#processQueue(), 50);
   }
 
-  _processQueue() {
+  #processQueue() {
     if (this.isShowing) return;
     if (this.queue.length === 0) return;
     const next = this.queue.shift();
     this.current = next;
     this.isShowing = true;
-    this._render(next);
+    this.#render(next);
   }
 
-  _render(item) {
+  #render(item) {
     if (typeof document === 'undefined') return;
-    this._destroyCurrent();
+    this.#destroyCurrent();
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
@@ -67,12 +237,12 @@ export default class ModalManager {
 
     const h = document.createElement('h2');
     h.className = 'modal-title';
-    h.textContent = item.title || this._lookupTitle(item.type) || 'Notice';
+    h.textContent = item.title || this.#lookupTitle(item.type) || 'Notice';
 
     const p = document.createElement('div');
     p.className = 'modal-body';
     // Prefer explicit body, then formatted payload-aware body, then static lookup
-    p.textContent = item.body || this._formatBody(item.type, item.payload) || this._lookupBody(item.type) || '';
+    p.textContent = item.body || this.#formatBody(item.type, item.payload) || this.#lookupBody(item.type) || '';
 
     const actions = document.createElement('div');
     actions.className = 'modal-actions';
@@ -96,14 +266,14 @@ export default class ModalManager {
 
     overlay.appendChild(box);
     this.root.appendChild(overlay);
-    this._currentEl = overlay;
+    this.#currentEl = overlay;
 
     // focus for a11y
     closeBtn.focus();
   }
 
   // Format modal body using payloads for richer messages
-  _formatBody(type, payload = {}) {
+  #formatBody(type, payload = {}) {
     try {
       switch (type) {
         case 'food_spoiled': {
@@ -137,13 +307,13 @@ export default class ModalManager {
     }
   }
 
-  _destroyCurrent() {
-    if (this._currentEl && this._currentEl.parentNode) this._currentEl.parentNode.removeChild(this._currentEl);
-    this._currentEl = null;
+  #destroyCurrent() {
+    if (this.#currentEl && this.#currentEl.parentNode) this.#currentEl.parentNode.removeChild(this.#currentEl);
+    this.#currentEl = null;
   }
 
   // Basic localization lookup stub; integrators should replace with real i18n lookup
-  _lookupTitle(type) {
+  #lookupTitle(type) {
     const titles = {
       intro_find_rome: 'Find Rome',
       farm_before_rome_warning: 'Farm built before Rome',
@@ -158,7 +328,7 @@ export default class ModalManager {
     return titles[type];
   }
 
-  _lookupBody(type) {
+  #lookupBody(type) {
     // Prefer externalized locale strings when available
     if (en && typeof en[type] === 'string') return en[type];
     const bodies = {

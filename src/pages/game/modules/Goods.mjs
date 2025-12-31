@@ -71,17 +71,7 @@ export default class Goods extends Movable {
 		}
 	}
 
-	// Override destroy to ensure "food-spoiled" can be emitted from other codepaths too
-	destroy() {
-		try {
-			if (this.#goodsType === 'food' && this.#rounds >= Goods.MaxFoodRounds) {
-				currentGame.events.emit('food-spoiled', { goods: this });
-			}
-		} catch (e) {
-			console.warn('Error emitting food-spoiled in destroy', e);
-		}
-		super.destroy();
-	}
+
 
 	get start() {
 		return this.#start;
