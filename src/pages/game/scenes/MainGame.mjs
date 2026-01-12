@@ -8,6 +8,8 @@ import { currentGame, GoodsOnBoard } from '../modules/Game.mjs';
 
 import InputManager from '../modules/InputManager.mjs';
 
+import { Modal, modalState } from '../views/modals/Modal.mjs';
+
 import { registerGoodsToView, renderGoods } from '../views/GoodsView.mjs';
 import { registerUnitToView, renderUnits } from '../views/UnitView.mjs';
 import * as TileView from '../views/TileView.mjs';
@@ -202,6 +204,9 @@ export default {
 				this.load.image(`tile.${key}`, `img/tiles/${terrain.tile}.png`);
 			}
 		});
+
+		// Global first-enemy detection: trigger once when any enemy unit
+		// is revealed on the map (not just when Rome is found).
 		this.load.spritesheet('cities', 'img/tiles/cities.png', {
 			frameHeight: 200,
 			frameWidth: 200,
@@ -235,6 +240,28 @@ export default {
 	},
 	create() {
 		MainGameScene = this;
+
+		// Modal state tracking is now handled in ModalManager (see modalState)
+
+		// Global first-enemy detection: trigger once when any enemy unit
+		// is revealed on the map (not just when Rome is found).
+		currentGame.events.on('hex-visible', (evt) => {
+			if (this._modalState.seenEnemy) return;
+			const hex = evt.detail?.hex;
+			if (!hex) return;
+			let enemyFound = false;
+			currentGame.players.forEach((p) => {
+				if (p.index === 0) return;
+				(p.units || []).forEach((u) => {
+					if (!u || u.deleted) return;
+					if (u.hex === hex) enemyFound = true;
+				});
+			});
+			if (enemyFound) {
+				this._modalState.seenEnemy = true;
+				Modal.open({ type: 'first_enemy_army', once: true, priority: 9 });
+			}
+		});
 
 		// Add graphics objects
 		currentGame.graphics = {
@@ -333,6 +360,29 @@ export default {
 		TileView.setTileVisibility();
 
 		this.inputManager = new InputManager(this);
+
+		// Show intro modal once on game start
+		setTimeout(() => {
+			Modal.open({ type: 'intro_find_rome', once: true, priority: 0 });
+		}, 600);
+
+		// If player builds a Farm before finding Rome, warn them
+		// Modal event listeners moved to Modal.mjs for separation of concerns
+
+		// When fog reveals a hex with a city belonging to Rome, mark Rome found
+		// Modal event listeners moved to Modal.mjs for separation of concerns
+
+		// Detect first Food arrival to Rome
+		// Modal event listeners moved to Modal.mjs for separation of concerns
+
+		// Rome demand increase -> show modal once
+		// Modal event listeners moved to Modal.mjs for separation of concerns
+
+		// Food spoil events -> aggregate and alert player with cooldown
+		// Modal event listeners moved to Modal.mjs for separation of concerns
+
+		// Warn when the player's war units (legions) are created that they need tribute/supplies
+		// Modal event listeners moved to Modal.mjs for separation of concerns
 
 		this.events.on('pause', () => {
 			currentGame.scenes.pause('mainControls');

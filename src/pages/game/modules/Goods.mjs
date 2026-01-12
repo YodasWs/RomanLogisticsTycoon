@@ -61,9 +61,17 @@ export default class Goods extends Movable {
 		this.#rounds = val;
 		// Limit lifespan of Food goods on the board
 		if (this.#goodsType === 'food' && this.#rounds >= Goods.MaxFoodRounds) {
+			// Emit spoil event before destroying so UI can react
+			try {
+				currentGame.events.emit('food-spoiled', { goods: this });
+			} catch (e) {
+				console.warn('Could not emit food-spoiled event', e);
+			}
 			this.destroy();
 		}
 	}
+
+
 
 	get start() {
 		return this.#start;
